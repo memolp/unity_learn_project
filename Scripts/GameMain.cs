@@ -37,7 +37,8 @@ namespace QSmale.Core
 		    	//GameObject go = (GameObject)GameObject.Instantiate(sc_p.ObjData, obj.transform);
 		    	
 		    	//UIManager.Instance.OpenPanel("Assets/UI/LoginUI.prefab", UILayer.UI_NORMAL);
-		    	UIManager.Instance.ShowWindow("LoginUI");
+		    	if(scene.name.IndexOf("Login") >=0)
+		    		UIManager.Instance.ShowWindow("LoginUI");
 	    	}
 		}
 		                               

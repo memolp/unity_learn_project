@@ -36,6 +36,14 @@ namespace QSmale.Core
 			gameobject = (GameObject)UnityEngine.Object.Instantiate(uiInfo.ObjData, uiInfo.objParent);
 		}
 		/// <summary>
+		/// UI数据更新接口
+		/// </summary>
+		/// <param name="data"></param>
+		public virtual void updateData(System.Object data)
+		{
+			
+		}
+		/// <summary>
 		/// UI销毁时执行
 		/// </summary>
 		public virtual void onDestory()

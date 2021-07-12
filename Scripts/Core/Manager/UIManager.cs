@@ -89,6 +89,15 @@ namespace QSmale.Core
 		/// <param name="uiName"></param>
 		public void ShowWindow(string uiName)
 		{
+			ShowWindow(uiName, null);
+		}
+		/// <summary>
+		/// 显示窗口，携带数据
+		/// </summary>
+		/// <param name="uiName"></param>
+		/// <param name="data"></param>
+		public void ShowWindow(string uiName, System.Object data)
+		{
 			UIWindow window = null;
 			// 先看是否已经创建过
 			if(!_uiWindows.TryGetValue(uiName, out window))
@@ -108,6 +117,7 @@ namespace QSmale.Core
 				window = (UIWindow)Activator.CreateInstance(uiInfo.uiType);
 				window.onCreate(uiasset);
 			}
+			window.updateData(data);
 			window.Show();
 		}
 		/// <summary>
