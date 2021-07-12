@@ -33,6 +33,6 @@ namespace QSmale.Core
 		/// <summary>
 		/// 是否使用Bundle模式运行
 		/// </summary>
-		public bool bundle_mode = false;	
+		public bool bundle_mode = true;	
 	}
 }

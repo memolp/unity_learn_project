@@ -66,8 +66,12 @@ namespace QSmale.Core
 			}
 			return true;
 		}
-		
-		public AssetBundle LoadBundle(string bundle_name)
+		/// <summary>
+		/// 加载指定的Bundle，会先从缓存中查看是否已经加载。
+		/// </summary>
+		/// <param name="bundle_name"></param>
+		/// <returns></returns>
+		AssetBundle LoadBundle(string bundle_name)
 		{
 			//UnityEngine.Debug.Log($"LoadBundle: {bundle_name}");
 			// 看对应的Bundle是否已经加载
@@ -79,18 +83,22 @@ namespace QSmale.Core
 			}
 			return bundle;
 		}
-		
+		/// <summary>
+		/// 从Bundle加载资源，会自动加载依赖相关的Bundle
+		/// </summary>
+		/// <param name="asset_obj"></param>
+		/// <returns></returns>
 		IEnumerator LoadAssetFromBundle(AssetObject asset_obj)
 		{
 			// 先根据资源路径找bundle
 			UnityEngine.Debug.Log(string.Format("load Asset with Bundle: {0}", asset_obj.assetPath));
 			// 先根据资源路径找bundle
 			BundleItemInfo bundleInfo = null;
-			// 场景资源的名称没有转换成小写，这个比较蛋疼。
-			string asset_path = asset_obj.assetType == AssetsType.SCENE ? asset_obj.assetPath: asset_obj.assetPath.ToLower();
+			// 先获取Bundle相关的信息
+			string asset_path = asset_obj.assetPath.ToLower(); // 记录里面全部用的是小写（后续可以改）
 			if(!_bundleInfos.TryGetValue(asset_path, out bundleInfo))
 			{
-				UnityEngine.Debug.LogError(string.Format("${0}$ asset is not exist! --- {1}", asset_path, _bundleInfos.ContainsKey(asset_path)));
+				UnityEngine.Debug.LogError(string.Format("${0}$ asset is not exist!", asset_path));
 				yield return null;
 			}
 			//先加载依赖的Bundle
@@ -140,7 +148,12 @@ namespace QSmale.Core
 			}
 			yield return null;
 		}
-			
+		/// <summary>
+		/// 加载场景
+		/// </summary>
+		/// <param name="scene_path">路径，Assets/xxx</param>
+		/// <param name="mode">模式</param>
+		/// <returns></returns>
 		IEnumerator Pri_LoadScene(string scene_path, LoadSceneMode mode)
 		{
 			Scene cur_scene = SceneManager.GetActiveScene();

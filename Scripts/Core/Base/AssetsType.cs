@@ -16,7 +16,6 @@ namespace QSmale.Core
 	{
 		NORMAL = 1,
 		SCENE,
-		PREFAB,
-		UI,
+		PREFAB
 	}
 }

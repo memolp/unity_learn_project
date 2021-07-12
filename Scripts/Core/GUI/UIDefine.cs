@@ -17,6 +17,7 @@ namespace QSmale.Core
 	[AttributeUsage(AttributeTargets.Class, AllowMultiple=false,Inherited=false)]
 	public class UIDefine : Attribute
 	{
+		public static Type UIDefineType = typeof(UIDefine);
 		/// <summary>
 		/// UI界面名称（唯一）
 		/// </summary>
@@ -39,13 +40,11 @@ namespace QSmale.Core
 		/// <param name="name"></param>
 		/// <param name="prefab"></param>
 		/// <param name="type"></param>
-		public UIDefine(string name, string prefab, Type type)
+		public UIDefine(string name, string prefab)
 		{
 			this.uiName = name;
 			this.uiPrefab = prefab;
 			this.uiLayer = UILayer.UI_NORMAL;
-			this.uiType = type;
-			
 		}
 		/// <summary>
 		/// 设置UI的prefab路径，并指定放置的层级
@@ -54,12 +53,11 @@ namespace QSmale.Core
 		/// <param name="prefab"></param>
 		/// <param name="type"></param>
 		/// <param name="layer"></param>
-		public UIDefine(string name, string prefab, Type type, UILayer layer)
+		public UIDefine(string name, string prefab, UILayer layer)
 		{
 			this.uiName = name;
 			this.uiPrefab = prefab;
 			this.uiLayer = layer;
-			this.uiType = type;
 		}
 		
 	}

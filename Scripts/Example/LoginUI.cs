@@ -13,7 +13,7 @@ using QSmale.Core;
 
 namespace QSmale.Test
 {
-	[UIDefine("LoginUI", "Assets/UI/LoginUI.prefab", typeof(LoginUI))]
+	[UIDefine("LoginUI", "Assets/UI/LoginUI.prefab")]
 	public class LoginUI : UIWindow
 	{
 		public override void onCreate(UIAssets uiInfo)

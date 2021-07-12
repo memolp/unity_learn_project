@@ -45,7 +45,7 @@ namespace QSmale.Editor
 		/// <param name="manifest"></param>
 		static void ExportBundleManifest(AssetBundleManifest manifest)
 		{
-			BundleManifest bundleInfo = new BundleManifest();
+			BundleManifest bundleInfo = (BundleManifest)ScriptableObject.CreateInstance(typeof(BundleManifest));
 			string[] bundle_names = manifest.GetAllAssetBundles();
 			BundleItemInfo[] bundles = new BundleItemInfo[bundle_names.Length];
 			for(int i=0; i<bundle_names.Length; i++)
@@ -66,7 +66,7 @@ namespace QSmale.Editor
 				bundle.md5 = FileUtils.calc_md5(full_path);
 				if(bundle_name.IndexOf("scene") >= 0)
 				{
-					bundle.assets = asset_bundle.GetAllScenePaths(); // 这个获取的资源路径名称是按照实际的大小写
+					bundle.assets = ListToLower(asset_bundle.GetAllScenePaths()); // 这个获取的资源路径名称是按照实际的大小写
 				}else
 				{
 					bundle.assets = asset_bundle.GetAllAssetNames(); // 这个获取的资源路径名称全是小写
@@ -98,6 +98,16 @@ namespace QSmale.Editor
 			{
 				UnityEngine.Debug.LogError("生成MainBundle失败");
 			}
+		}
+		
+		static string[] ListToLower(string[] data)
+		{
+			string[] _lower_data = new string[data.Length];
+			for(int i=0; i < data.Length; i++)
+			{
+				_lower_data[i] = data[i].ToLower();
+			}
+			return _lower_data;
 		}
 	}
 }

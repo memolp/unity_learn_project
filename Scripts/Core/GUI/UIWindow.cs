@@ -11,7 +11,15 @@ using UnityEngine;
 
 namespace QSmale.Core
 {
-	public class UIWindow 
+	/// <summary>
+	/// 接口类
+	/// </summary>
+	public interface IUICore
+	{
+		
+	}
+	
+	public class UIWindow : IUICore
 	{
 		public GameObject gameobject{set;get;}
 		/// <summary>

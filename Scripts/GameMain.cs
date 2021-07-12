@@ -3,7 +3,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -14,21 +13,6 @@ namespace QSmale.Core
 	{
 		public static void Main()
 	    {
-			if(!ResouceLoader.Instance.LoadBundleManifest())
-			{
-				UnityEngine.Debug.LogError("LoadBundleManifest error");
-				return;
-			}
-			
-			UIManager.Instance.InitUILayout();
-			#if USE_ASSEMBLY_REG
-			Assembly assmebly = Assembly.GetCallingAssembly();
-			foreach(Type type in assmebly.GetTypes())
-			{
-				UIManager.Instance.InitLoadWithAssembly(type);
-			}
-			#endif
-
 			SceneManager.sceneLoaded += OnSceneLoadEnd;
 			
 			UnityEngine.Debug.Log("START.......");
