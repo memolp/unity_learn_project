@@ -1,0 +1,17 @@
+# meta files
+*.meta
+
+# StreamingAssets dir
+/StreamingAssets
+
+# UI
+/UI
+
+#Scenes
+/Scenes
+
+#Prefabs
+/Prefabs
+
+#Config
+/Config
