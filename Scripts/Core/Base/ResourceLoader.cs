@@ -6,13 +6,17 @@
  * 
  * To change this template use Tools | Options | Coding | Edit Standard Headers.
  */
-
+#define ANDROID_GOOGLE_AAB
 using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
+#if ANDROID_GOOGLE_AAB
+using Google.Play.AssetDelivery;
+#endif
 
 namespace QSmale.Core
 {
@@ -52,7 +56,7 @@ namespace QSmale.Core
 		{
 			if(_manifest != null) return false; //暂不支持加载多个
 			_bundleInfos = new Dictionary<string, BundleItemInfo>();
-			string manifest_path = Path.Combine(Const.BUNDLE_STORE_PATH, Const.BUNDLE_MAIN_NAME);
+			string manifest_path = Path.Combine(Application.streamingAssetsPath, Const.BUNDLE_MAIN_NAME);
 			AssetBundle manifest_bundle = AssetBundle.LoadFromFile(manifest_path);
 			BundleManifest manifest = manifest_bundle.LoadAsset<BundleManifest>(Const.BUNDLE_ASSETS_INFO);
 			// 将数据缓存起来
@@ -70,18 +74,71 @@ namespace QSmale.Core
 		/// 加载指定的Bundle，会先从缓存中查看是否已经加载。
 		/// </summary>
 		/// <param name="bundle_name"></param>
+		/// <param name="asset_obj"></param>
 		/// <returns></returns>
-		AssetBundle LoadBundle(string bundle_name)
+		IEnumerator LoadBundleAsync(string bundle_name, AssetObject asset_obj)
 		{
-			//UnityEngine.Debug.Log($"LoadBundle: {bundle_name}");
-			// 看对应的Bundle是否已经加载
+			UnityEngine.Debug.Log($"LoadBundle: {bundle_name}");
 			AssetBundle bundle = null;
-			if(!_cacheBundles.TryGetValue(bundle_name, out bundle))
+			// 看对应的Bundle是否已经加载
+			if(_cacheBundles.TryGetValue(bundle_name, out bundle))
 			{
-				bundle = AssetBundle.LoadFromFile(Path.Combine(Const.BUNDLE_STORE_PATH, bundle_name));
-				_cacheBundles.Add(bundle_name, bundle);
+				if(asset_obj == null)
+				{
+					yield return null;
+				}
+				yield return SetupBundleObject(asset_obj, bundle);;
 			}
-			return bundle;
+			#if ANDROID_GOOGLE_AAB
+			// Google加载方式
+			string bundle_url = Path.Combine("assetpack", bundle_name);
+			PlayAssetBundleRequest request = PlayAssetDelivery.RetrieveAssetBundleAsync(bundle_url);
+			while (!request.IsDone) 
+			{
+				if(request.Status == AssetDeliveryStatus.WaitingForWifi)
+				{
+					var userConfirmationOperation = PlayAssetDelivery.ShowCellularDataConfirmation();
+					yield return userConfirmationOperation;
+					if((userConfirmationOperation.Error != AssetDeliveryErrorCode.NoError) ||
+					   (userConfirmationOperation.GetResult() != ConfirmationDialogResult.Accepted))
+					{
+						yield return null;
+					}
+					yield return new WaitUntil(()=>request.Status != AssetDeliveryStatus.WaitingForWifi);
+				}
+				yield return null;
+			}
+			bundle = request.AssetBundle;
+			#else
+			// 普通的Bundle加载方式
+			var req = AssetBundle.LoadFromFileAsync(Path.Combine(Const.BUNDLE_STORE_PATH, bundle_name));
+			yield return req;
+			bundle = req.assetBundle;
+			#endif
+			if(bundle == null)
+			{
+				yield return null;
+			}
+			_cacheBundles.Add(bundle_name, bundle);
+			yield return SetupBundleObject(asset_obj, bundle);
+		}
+		/// <summary>
+		/// 装载Bundle对象
+		/// </summary>
+		/// <param name="asset_obj"></param>
+		/// <param name="bundle"></param>
+		/// <returns></returns>
+		IEnumerator SetupBundleObject(AssetObject asset_obj, AssetBundle bundle)
+		{
+			if(asset_obj.assetType == AssetsType.SCENE)
+			{
+				yield return Pri_LoadScene(asset_obj.assetPath, LoadSceneMode.Additive);
+			}else
+			{
+				var obj = bundle.LoadAsset<GameObject>(asset_obj.assetPath);
+				asset_obj.ObjData = obj;
+				yield return null;
+			}
 		}
 		/// <summary>
 		/// 从Bundle加载资源，会自动加载依赖相关的Bundle
@@ -104,19 +161,9 @@ namespace QSmale.Core
 			//先加载依赖的Bundle
 			foreach(string dep in bundleInfo.depends)
 			{
-				AssetBundle dep_bundle = LoadBundle(dep);
+				yield return LoadBundleAsync(dep, null);
 			}
-			AssetBundle bundle = LoadBundle(bundleInfo.bundle_name);
-			if(asset_obj.assetType == AssetsType.SCENE)
-			{
-				yield return Pri_LoadScene(asset_obj.assetPath, LoadSceneMode.Additive);
-			}else
-			{
-				var obj = bundle.LoadAsset<GameObject>(asset_obj.assetPath);
-				asset_obj.ObjData = obj;
-				//GameObject.Instantiate(obj, asset_obj.objParent);
-				yield return asset_obj;
-			}
+			yield return LoadBundleAsync(bundleInfo.bundle_name, asset_obj);
 		}
 		
 		/// <summary>

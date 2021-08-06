@@ -22,7 +22,7 @@ namespace QSmale.Editor
 			{
 				Directory.CreateDirectory(Const.BUNDLE_STORE_PATH);
 			}
-			string bundle_assets = Path.Combine(Const.BUNDLE_STORE_PATH);
+			string bundle_assets = Const.BUNDLE_STORE_PATH;
 			AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(bundle_assets, BuildAssetBundleOptions.None, BuildTarget.Android);
 			if(manifest == null)
 			{
@@ -37,7 +37,23 @@ namespace QSmale.Editor
 		[MenuItem("Tools/BuildBundleCollect")]
 		static void BuildAssetBundleWithCollect()
 		{
-			
+			// 创建目录
+			if(!Directory.Exists(Const.BUNDLE_STORE_PATH))
+			{
+				Directory.CreateDirectory(Const.BUNDLE_STORE_PATH);
+			}
+			BundleCollector collector = new BundleCollector();
+			collector.StartCollect();
+			AssetBundleBuild[] builds = collector.get_builds();
+			AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(Const.BUNDLE_STORE_PATH, builds, BuildAssetBundleOptions.None, BuildTarget.Android);
+			if(manifest == null)
+			{
+				UnityEngine.Debug.LogError("打包Bundle失败!");
+				return;
+			}
+			UnityEngine.Debug.Log("打包Bundle完成");
+			BundleMaker.ExportBundleManifest(manifest);
+			UnityEngine.Debug.Log("写Bundle完成");
 		}
 		/// <summary>
 		/// 导出Bundle的关系图，方便代码读取
@@ -48,6 +64,7 @@ namespace QSmale.Editor
 			BundleManifest bundleInfo = (BundleManifest)ScriptableObject.CreateInstance(typeof(BundleManifest));
 			string[] bundle_names = manifest.GetAllAssetBundles();
 			BundleItemInfo[] bundles = new BundleItemInfo[bundle_names.Length];
+			 
 			for(int i=0; i<bundle_names.Length; i++)
 			{
 				string bundle_name = bundle_names[i];
@@ -64,12 +81,14 @@ namespace QSmale.Editor
 				bundle.bundle_name = bundle_name;
 				bundle.size = (int)FileUtils.calc_size(full_path);
 				bundle.md5 = FileUtils.calc_md5(full_path);
-				if(bundle_name.IndexOf("scene") >= 0)
+				// 获取资源列表-并判断是不是场景
+				string[] assets = asset_bundle.GetAllAssetNames();
+				if(assets == null || assets.Length < 1)
 				{
 					bundle.assets = ListToLower(asset_bundle.GetAllScenePaths()); // 这个获取的资源路径名称是按照实际的大小写
 				}else
 				{
-					bundle.assets = asset_bundle.GetAllAssetNames(); // 这个获取的资源路径名称全是小写
+					bundle.assets = assets;
 				}
 				/*List<string> depends = new List<string>();
 				foreach(string asset_name in bundle.assets)
@@ -93,7 +112,7 @@ namespace QSmale.Editor
 			main_bundle.assetNames = new string[] {Const.BUNDLE_ASSETS_INFO};
 			
 			//var result = BuildPipeline.BuildAssetBundle(null,new UnityEngine.Object[1]{bundleInfo}, main_bundle, BuildAssetBundleOptions.ForceRebuildAssetBundle, BuildTarget.Android);
-			var result = BuildPipeline.BuildAssetBundles(Const.BUNDLE_STORE_PATH, new AssetBundleBuild[1]{main_bundle}, BuildAssetBundleOptions.None, BuildTarget.Android);
+			var result = BuildPipeline.BuildAssetBundles(Application.streamingAssetsPath, new AssetBundleBuild[1]{main_bundle}, BuildAssetBundleOptions.None, BuildTarget.Android);
 			if(!result)
 			{
 				UnityEngine.Debug.LogError("生成MainBundle失败");

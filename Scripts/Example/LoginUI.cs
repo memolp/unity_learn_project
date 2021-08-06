@@ -13,7 +13,7 @@ using QSmale.Core;
 
 namespace QSmale.Test
 {
-	[UIDefine("LoginUI", "Assets/UI/LoginUI.prefab")]
+	[UIDefine("LoginUI", "Assets/ArtData/UI/LoginUI.prefab")]
 	public class LoginUI : UIWindow
 	{
 		public override void onCreate(UIAssets uiInfo)
@@ -36,7 +36,7 @@ namespace QSmale.Test
 		void OnBtnGoogleClick()
 		{
 			AssetObject scene = new AssetObject();
-	    	scene.assetPath = "Assets/Scenes/Battle_1000.unity";
+	    	scene.assetPath = "Assets/ArtData/Scenes/Battle_1000.unity";
 	    	scene.assetType = AssetsType.SCENE;
 	    	Global.StartCoroutine(ResouceLoader.Instance.LoadAsset(scene));
 	    	this.Hide();

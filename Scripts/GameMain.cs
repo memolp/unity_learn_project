@@ -17,7 +17,7 @@ namespace QSmale.Core
 			
 			UnityEngine.Debug.Log("START.......");
 	    	AssetObject scene = new AssetObject();
-	    	scene.assetPath = "Assets/Scenes/Login.unity";
+	    	scene.assetPath = "Assets/ArtData/Scenes/Login.unity";
 	    	scene.assetType = AssetsType.SCENE;
 	    	Global.StartCoroutine(ResouceLoader.Instance.LoadAsset(scene));
 	    	
@@ -29,7 +29,7 @@ namespace QSmale.Core
 	    	if(obj  != null)
 	    	{
 	    		AssetObject sc_p = new AssetObject();
-		    	sc_p.assetPath = "Assets/Prefabs/scene_ttt.prefab";
+		    	sc_p.assetPath = "Assets/ArtData/Prefabs/scene_ttt.prefab";
 		    	sc_p.objType = typeof(UnityEngine.GameObject);
 		    	sc_p.assetType = AssetsType.PREFAB;
 		    	sc_p.objParent = obj.transform;
