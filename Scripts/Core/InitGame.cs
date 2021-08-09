@@ -57,6 +57,17 @@ namespace QSmale.Core
 					}
 					continue;
 				}
+				// 只针对实现接口的类处理
+				if(type.GetInterface("ISceneCore") != null)
+				{
+					SceneDefine sceneInfo = Attribute.GetCustomAttribute(type, SceneDefine.SceneDefineType) as SceneDefine;
+					if(sceneInfo != null)
+					{
+						sceneInfo.sceneType = type;
+						SceneManager.Instance.RegisterScene(sceneInfo);
+					}
+					continue;
+				}
 			}
 			UnityEngine.Debug.Log("[Assembly] End load Assembly");
 		}

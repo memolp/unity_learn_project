@@ -6,7 +6,7 @@
  * 
  * To change this template use Tools | Options | Coding | Edit Standard Headers.
  */
-#define ANDROID_GOOGLE_AAB
+//#define ANDROID_GOOGLE_AAB
 using System;
 using System.IO;
 using System.Collections;
@@ -92,7 +92,10 @@ namespace QSmale.Core
 			{
 				#if ANDROID_GOOGLE_AAB
 				// Google加载方式
-				//string bundle_url = Path.Combine("assetpack", bundle_name);
+				// AsssetPack加载
+				//PlayAssetPackRequest request = PlayAssetDelivery.RetrieveAssetPackAsync(asset_path);
+				// Bundle Asset加载
+				UnityEngine.Debug.Log($"LoadBundle PlayAssetDelivery: {bundle_name}");
 				PlayAssetBundleRequest request = PlayAssetDelivery.RetrieveAssetBundleAsync(bundle_name);
 				while (!request.IsDone) 
 				{
@@ -103,7 +106,7 @@ namespace QSmale.Core
 						if((userConfirmationOperation.Error != AssetDeliveryErrorCode.NoError) ||
 						   (userConfirmationOperation.GetResult() != ConfirmationDialogResult.Accepted))
 						{
-							yield return null;
+							yield return null; // 没有选择或选择错误
 						}
 						yield return new WaitUntil(()=>request.Status != AssetDeliveryStatus.WaitingForWifi);
 					}
@@ -111,23 +114,24 @@ namespace QSmale.Core
 				}
 				if(request.Error != AssetDeliveryErrorCode.NoError)
 				{
-					yield return null;
+					yield break; //依然数据错误，则直接跳过
 				}
 				bundle = request.AssetBundle;
 				#else
 				// 普通的Bundle加载方式
+				UnityEngine.Debug.Log($"LoadBundle AssetBundle: {bundle_name}");
 				var req = AssetBundle.LoadFromFileAsync(Path.Combine(Const.BUNDLE_STORE_PATH, bundle_name));
 				yield return req;
 				bundle = req.assetBundle;
 				#endif
 				if(bundle != null)
 				{
-					_cacheLoadingBundles.Remove(bundle_name); //从加载中移除
+					UnityEngine.Debug.Log($"_cacheBundles {bundle_name}");
 					_cacheBundles.Add(bundle_name, bundle);  // 添加到已加载列表
+					_cacheLoadingBundles.Remove(bundle_name); //从加载中移除
 					yield return SetupBundleObject(asset_obj, bundle);
 				}
 			}
-			yield return null;
 		}
 		/// <summary>
 		/// 装载Bundle对象
@@ -141,15 +145,13 @@ namespace QSmale.Core
 			{
 				if(asset_obj.assetType == AssetsType.SCENE)
 				{
-					yield return Pri_LoadScene(asset_obj.assetPath, LoadSceneMode.Additive);
+					yield return Pri_LoadScene(asset_obj);
 				}else
 				{
 					var obj = bundle.LoadAsset<GameObject>(asset_obj.assetPath);
 					asset_obj.onLoadEnd(obj);
-					yield return null;
 				}
 			}
-			yield return null;
 		}
 		/// <summary>
 		/// 从Bundle加载资源，会自动加载依赖相关的Bundle
@@ -160,11 +162,6 @@ namespace QSmale.Core
 		{
 			// 先根据资源路径找bundle
 			UnityEngine.Debug.Log(string.Format("load Asset with Bundle: {0}", asset_obj.assetPath));
-			// 资源正在加载中
-			if(_cacheLoadingBundles.ContainsKey(asset_obj.assetPath))
-			{
-				yield return null;
-			}
 			// 先根据资源路径找bundle
 			BundleItemInfo bundleInfo = null;
 			// 先获取Bundle相关的信息
@@ -172,11 +169,19 @@ namespace QSmale.Core
 			if(!_bundleInfos.TryGetValue(asset_path, out bundleInfo))
 			{
 				UnityEngine.Debug.LogError(string.Format("${0}$ asset is not exist!", asset_path));
-				yield return null;
+				yield break;  // 资源没找到，也跳过
 			}
+			// 资源正在加载中
+			if(_cacheLoadingBundles.ContainsKey(bundleInfo.bundle_name))
+			{
+				UnityEngine.Debug.LogWarning($"{bundleInfo.bundle_name} is already in loading queue");
+				yield break;  //暂时先全部跳过
+			}
+			_cacheLoadingBundles.Add(bundleInfo.bundle_name, 1);
 			//先加载依赖的Bundle
 			foreach(string dep in bundleInfo.depends)
 			{
+				UnityEngine.Debug.Log($"load dep bundle: {dep}");
 				yield return LoadBundleAsync(dep, null);
 			}
 			yield return LoadBundleAsync(bundleInfo.bundle_name, asset_obj);
@@ -197,34 +202,34 @@ namespace QSmale.Core
 #if UNITY_EDITOR
 				if(asset_obj.assetType == AssetsType.SCENE)
 				{
-					yield return Pri_LoadScene(asset_obj.assetPath, LoadSceneMode.Additive);
+					yield return Pri_LoadScene(asset_obj);
 				}else
 				{
 					var obj = UnityEditor.AssetDatabase.LoadAssetAtPath(asset_obj.assetPath, asset_obj.objType);
-					asset_obj.ObjData = obj;
-					//GameObject.Instantiate(obj, asset_obj.objParent);
-					yield return asset_obj;
+					asset_obj.onLoadEnd(obj);
 				}
 #else
 				UnityEngine.Debug.LogError(string.Format("LoadAsset: {0} not support!"));
 #endif
 			}
-			yield return null;
 		}
 		/// <summary>
 		/// 加载场景
 		/// </summary>
-		/// <param name="scene_path">路径，Assets/xxx</param>
-		/// <param name="mode">模式</param>
+		/// <param name="asset_obj">路径，Assets/xxx</param>
 		/// <returns></returns>
-		IEnumerator Pri_LoadScene(string scene_path, LoadSceneMode mode)
+		IEnumerator Pri_LoadScene(AssetObject asset_obj)
 		{
-			Scene cur_scene = SceneManager.GetActiveScene();
-			AsyncOperation load_async = SceneManager.LoadSceneAsync(scene_path, mode);
+			SceneAsset scene_asset = asset_obj as SceneAsset;
+			string scene_path = asset_obj.assetPath;
+			LoadSceneMode mode = scene_asset !=null ? scene_asset.sceneMode : LoadSceneMode.Additive;
+			Scene cur_scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+			AsyncOperation load_async = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(scene_path, mode);
 			load_async.allowSceneActivation = true;
 			yield return load_async;
-			AsyncOperation unload_async = SceneManager.UnloadSceneAsync(cur_scene);
+			AsyncOperation unload_async = UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(cur_scene);
 			yield return unload_async;
+			asset_obj.onLoadEnd(null);
 		}
 	}
 }

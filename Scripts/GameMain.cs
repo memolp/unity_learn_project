@@ -13,16 +13,18 @@ namespace QSmale.Core
 	{
 		public static void Main()
 	    {
-			SceneManager.sceneLoaded += OnSceneLoadEnd;
-			
 			UnityEngine.Debug.Log("START.......");
+			// 原有场景加载的方式
+			/*SceneManager.sceneLoaded += OnSceneLoadEnd;
 	    	AssetObject scene = new AssetObject();
 	    	scene.assetPath = "Assets/ArtData/Scenes/Login.unity";
 	    	scene.assetType = AssetsType.SCENE;
-	    	Global.StartCoroutine(ResouceLoader.Instance.LoadAsset(scene));
+	    	Global.StartCoroutine(ResouceLoader.Instance.LoadAsset(scene));*/
+			// 改成了新的场景加载模式，这样隐藏了很多内容。
+	    	SceneManager.Instance.ChangeScene("LoginScene");
 	    	
 	    }
-		
+		/*
 		static void OnSceneLoadEnd(Scene scene, LoadSceneMode mode)
 		{
 			GameObject obj = GameObject.Find("SceneRoot");
@@ -34,13 +36,11 @@ namespace QSmale.Core
 		    	sc_p.assetType = AssetsType.PREFAB;
 		    	sc_p.objParent = obj.transform;
 		    	Global.StartCoroutine(ResouceLoader.Instance.LoadAsset(sc_p));
-		    	//GameObject go = (GameObject)GameObject.Instantiate(sc_p.ObjData, obj.transform);
 		    	
-		    	//UIManager.Instance.OpenPanel("Assets/UI/LoginUI.prefab", UILayer.UI_NORMAL);
 		    	if(scene.name.IndexOf("Login") >=0)
 		    		UIManager.Instance.ShowWindow("LoginUI");
 	    	}
-		}
+		}*/
 		                               
 	}
 }
