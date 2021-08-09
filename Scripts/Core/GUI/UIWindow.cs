@@ -21,26 +21,46 @@ namespace QSmale.Core
 	
 	public class UIWindow : IUICore
 	{
+		/// <summary>
+		/// UI资源prefab
+		/// </summary>
 		public GameObject gameobject{set;get;}
 		/// <summary>
 		/// 保留定义
 		/// </summary>
 		public static Type UIWindowType = typeof(UIWindow);
 		/// <summary>
-		/// UI创建时执行
+		/// UI数据，方便扩展UI数据填充
 		/// </summary>
-		public virtual void onCreate(UIAssets uiInfo)
+		public System.Object uiData{set;get;}
+		/// <summary>
+		/// UI加载资源
+		/// </summary>
+		/// <param name="uiInfo"></param>
+		public virtual void onLoad(UIAssets uiInfo)
 		{
-			//Debug.Log($"UIWindow onCreate, url:{uiInfo.assetPath}");
+			//Debug.Log($"UIWindow onLoad, url:{uiInfo.assetPath}");
+			uiInfo.uiWindow = this;
 			Global.StartCoroutine(ResouceLoader.Instance.LoadAsset(uiInfo));
-			gameobject = (GameObject)UnityEngine.Object.Instantiate(uiInfo.ObjData, uiInfo.objParent);
 		}
 		/// <summary>
-		/// UI数据更新接口
+		/// UI加载资源完成
 		/// </summary>
-		/// <param name="data"></param>
-		public virtual void updateData(System.Object data)
+		public virtual void onLoadEnd(UIAssets uiInfo)
 		{
+			// 实例化
+			gameobject = (GameObject)UnityEngine.Object.Instantiate(uiInfo.ObjData, uiInfo.objParent);
+			// 调用创建方法
+			this.onCreate();
+			// 调用显示
+			this.Show();
+		}
+		/// <summary>
+		/// UI创建时执行
+		/// </summary>
+		public virtual void onCreate()
+		{
+			
 			
 		}
 		/// <summary>

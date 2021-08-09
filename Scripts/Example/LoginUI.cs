@@ -16,9 +16,9 @@ namespace QSmale.Test
 	[UIDefine("LoginUI", "Assets/ArtData/UI/LoginUI.prefab")]
 	public class LoginUI : UIWindow
 	{
-		public override void onCreate(UIAssets uiInfo)
+		public override void onCreate()
 		{
-			base.onCreate(uiInfo);
+			base.onCreate();
 			Transform btn_guest = gameobject.transform.Find("login_info/btn_guest");
 			Button btn =  btn_guest.GetComponent<Button>();
 			btn.onClick.AddListener(OnBtnGuestClick);

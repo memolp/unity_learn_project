@@ -20,6 +20,7 @@ namespace QSmale.Core
 	public class UIAssets: AssetObject
 	{
 		UILayer _layer = UILayer.UI_NORMAL;
+		UIWindow _window = null;
 		/// <summary>
 		/// UI层级
 		/// </summary>
@@ -33,6 +34,29 @@ namespace QSmale.Core
 			{
 				_layer = value;
 			}
+		}
+		/// <summary>
+		/// UI对象
+		/// </summary>
+		public UIWindow uiWindow
+		{
+			get
+			{
+				return _window;
+			}
+			set
+			{
+				_window = value;
+			}
+		}
+		/// <summary>
+		/// 重载资源加载完成的方法
+		/// </summary>
+		/// <param name="obj"></param>
+		public override void onLoadEnd(UnityEngine.Object obj)
+		{
+			base.onLoadEnd(obj);
+			_window.onLoadEnd(this);
 		}
 	}
 }

@@ -107,5 +107,13 @@ namespace QSmale.Core
 			obj_type_ = obj_type;
 			asset_type_ = asset_type;
 		}
+		/// <summary>
+		/// 资源加载完成赋值
+		/// </summary>
+		/// <param name="obj"></param>
+		public virtual void onLoadEnd(UnityEngine.Object obj)
+		{
+			obj_ = obj;
+		}
 	}
 }

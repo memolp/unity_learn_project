@@ -48,9 +48,12 @@ namespace QSmale.Core
 		/// </summary>
 		Dictionary<string, AssetBundle> _cacheBundles = new Dictionary<string, AssetBundle>();
 		/// <summary>
+		/// 缓存正在加载中的Bundle
+		/// </summary>
+		Dictionary<string, int> _cacheLoadingBundles = new Dictionary<string, int>();
+		/// <summary>
 		/// 加载Manifest文件
 		/// </summary>
-		/// <param name="manifest_path"></param>
 		/// <returns></returns>
 		public bool LoadBundleManifest()
 		{
@@ -83,44 +86,47 @@ namespace QSmale.Core
 			// 看对应的Bundle是否已经加载
 			if(_cacheBundles.TryGetValue(bundle_name, out bundle))
 			{
-				if(asset_obj == null)
+				yield return SetupBundleObject(asset_obj, bundle);;
+			}
+			else
+			{
+				#if ANDROID_GOOGLE_AAB
+				// Google加载方式
+				//string bundle_url = Path.Combine("assetpack", bundle_name);
+				PlayAssetBundleRequest request = PlayAssetDelivery.RetrieveAssetBundleAsync(bundle_name);
+				while (!request.IsDone) 
+				{
+					if(request.Status == AssetDeliveryStatus.WaitingForWifi)
+					{
+						var userConfirmationOperation = PlayAssetDelivery.ShowCellularDataConfirmation();
+						yield return userConfirmationOperation;
+						if((userConfirmationOperation.Error != AssetDeliveryErrorCode.NoError) ||
+						   (userConfirmationOperation.GetResult() != ConfirmationDialogResult.Accepted))
+						{
+							yield return null;
+						}
+						yield return new WaitUntil(()=>request.Status != AssetDeliveryStatus.WaitingForWifi);
+					}
+					yield return null;
+				}
+				if(request.Error != AssetDeliveryErrorCode.NoError)
 				{
 					yield return null;
 				}
-				yield return SetupBundleObject(asset_obj, bundle);;
-			}
-			#if ANDROID_GOOGLE_AAB
-			// Google加载方式
-			string bundle_url = Path.Combine("assetpack", bundle_name);
-			PlayAssetBundleRequest request = PlayAssetDelivery.RetrieveAssetBundleAsync(bundle_url);
-			while (!request.IsDone) 
-			{
-				if(request.Status == AssetDeliveryStatus.WaitingForWifi)
+				bundle = request.AssetBundle;
+				#else
+				// 普通的Bundle加载方式
+				var req = AssetBundle.LoadFromFileAsync(Path.Combine(Const.BUNDLE_STORE_PATH, bundle_name));
+				yield return req;
+				bundle = req.assetBundle;
+				#endif
+				if(bundle != null)
 				{
-					var userConfirmationOperation = PlayAssetDelivery.ShowCellularDataConfirmation();
-					yield return userConfirmationOperation;
-					if((userConfirmationOperation.Error != AssetDeliveryErrorCode.NoError) ||
-					   (userConfirmationOperation.GetResult() != ConfirmationDialogResult.Accepted))
-					{
-						yield return null;
-					}
-					yield return new WaitUntil(()=>request.Status != AssetDeliveryStatus.WaitingForWifi);
+					_cacheBundles.Add(bundle_name, bundle);
+					yield return SetupBundleObject(asset_obj, bundle);
 				}
-				yield return null;
 			}
-			bundle = request.AssetBundle;
-			#else
-			// 普通的Bundle加载方式
-			var req = AssetBundle.LoadFromFileAsync(Path.Combine(Const.BUNDLE_STORE_PATH, bundle_name));
-			yield return req;
-			bundle = req.assetBundle;
-			#endif
-			if(bundle == null)
-			{
-				yield return null;
-			}
-			_cacheBundles.Add(bundle_name, bundle);
-			yield return SetupBundleObject(asset_obj, bundle);
+			yield return null;
 		}
 		/// <summary>
 		/// 装载Bundle对象
@@ -130,15 +136,19 @@ namespace QSmale.Core
 		/// <returns></returns>
 		IEnumerator SetupBundleObject(AssetObject asset_obj, AssetBundle bundle)
 		{
-			if(asset_obj.assetType == AssetsType.SCENE)
+			if(asset_obj != null)
 			{
-				yield return Pri_LoadScene(asset_obj.assetPath, LoadSceneMode.Additive);
-			}else
-			{
-				var obj = bundle.LoadAsset<GameObject>(asset_obj.assetPath);
-				asset_obj.ObjData = obj;
-				yield return null;
+				if(asset_obj.assetType == AssetsType.SCENE)
+				{
+					yield return Pri_LoadScene(asset_obj.assetPath, LoadSceneMode.Additive);
+				}else
+				{
+					var obj = bundle.LoadAsset<GameObject>(asset_obj.assetPath);
+					asset_obj.onLoadEnd(obj);
+					yield return null;
+				}
 			}
+			yield return null;
 		}
 		/// <summary>
 		/// 从Bundle加载资源，会自动加载依赖相关的Bundle
@@ -149,6 +159,11 @@ namespace QSmale.Core
 		{
 			// 先根据资源路径找bundle
 			UnityEngine.Debug.Log(string.Format("load Asset with Bundle: {0}", asset_obj.assetPath));
+			// 资源正在加载中
+			if(_cacheLoadingBundles.ContainsKey(asset_obj.assetPath))
+			{
+				yield return null;
+			}
 			// 先根据资源路径找bundle
 			BundleItemInfo bundleInfo = null;
 			// 先获取Bundle相关的信息

@@ -115,10 +115,14 @@ namespace QSmale.Core
 				uiasset.objParent = ui_layers[uiInfo.uiLayer].transform;
 				
 				window = (UIWindow)Activator.CreateInstance(uiInfo.uiType);
-				window.onCreate(uiasset);
+				window.uiData = data;
+				window.onLoad(uiasset);
+				_uiWindows.Add(uiName, window);
+			}else
+			{
+				window.uiData = data;
+				window.Show();
 			}
-			window.updateData(data);
-			window.Show();
 		}
 		/// <summary>
 		/// 关闭界面
