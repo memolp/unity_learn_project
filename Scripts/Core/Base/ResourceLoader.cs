@@ -122,7 +122,8 @@ namespace QSmale.Core
 				#endif
 				if(bundle != null)
 				{
-					_cacheBundles.Add(bundle_name, bundle);
+					_cacheLoadingBundles.Remove(bundle_name); //从加载中移除
+					_cacheBundles.Add(bundle_name, bundle);  // 添加到已加载列表
 					yield return SetupBundleObject(asset_obj, bundle);
 				}
 			}
